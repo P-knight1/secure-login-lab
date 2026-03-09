@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session, redirect, url_for
 
 app = Flask(__name__)
+app.secret_key = "secret-key"
 
 @app.route("/")
 def home():
@@ -14,9 +15,9 @@ def login():
         username = request.form.get("username")
         password = request.form.get("password")
 
-        #hard coded credentials for testing and monitering versios 1
-        if username == "knight" and password == "password123":
-            return render_template("dashboard.html", username=username)
+        if username == "alice" and password == "Password123":
+            session["username"] = username
+            return redirect(url_for("dashboard"))
         else:
             error = "Invalid username or password."
 
@@ -24,7 +25,15 @@ def login():
 
 @app.route("/dashboard")
 def dashboard():
-    return render_template("dashboard.html", username="alice")
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    return render_template("dashboard.html", username=session["username"])
+
+@app.route("/logout")
+def logout():
+    session.pop("username", None)
+    return redirect(url_for("login"))
 
 if __name__ == "__main__":
     app.run(debug=True)
