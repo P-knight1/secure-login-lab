@@ -1,7 +1,14 @@
 from flask import Flask, render_template, request, session, redirect, url_for
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = "secret-key"
+
+users = {
+    "alice": {
+        "password_hash": generate_password_hash("Password123")
+    }
+}
 
 @app.route("/")
 def home():
@@ -15,7 +22,9 @@ def login():
         username = request.form.get("username")
         password = request.form.get("password")
 
-        if username == "alice" and password == "Password123":
+        user = users.get(username)
+
+        if user and check_password_hash(user["password_hash"], password):
             session["username"] = username
             return redirect(url_for("dashboard"))
         else:
