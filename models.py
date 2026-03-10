@@ -11,7 +11,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     # Unique username for authentication
-    username = db.Column(db.String(80), unique=True, nullable=False)
+    username      = db.Column(db.String(80), nullable=False, unique=True)
 
     # Stored hashed password (never store plaintext passwords)
     password_hash = db.Column(db.String(255), nullable=False)

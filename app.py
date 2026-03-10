@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, session, redirect, url_for
-from werkzeug.security import check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # Import database instance and User model
 from models import db, User
@@ -83,6 +83,40 @@ def logout():
     session.pop("username", None)
 
     return redirect(url_for("login"))
+
+
+# Registration route
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    error = None
+    success = None
+
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        # Basic validation
+        if not username or not password:
+            error = "Username and password are required."
+        else:
+            # Check whether the username already exists
+            existing_user = User.query.filter_by(username=username).first()
+
+            if existing_user:
+                error = "Username already exists."
+            else:
+                # Create a new user with a hashed password
+                new_user = User(
+                    username = username,
+                    password_hash = generate_password_hash(password)
+                )
+
+                db.session.add(new_user)
+                db.session.commit()
+
+                success = "Registration successful. You can now log in."
+
+    return render_template("register.html", error=error, success=success)
 
 
 # Run Flask development server
