@@ -44,8 +44,8 @@ def login():
     if request.method == "POST":
 
         # Retrieve submitted credentials
-        username = request.form.get("username")
-        password = request.form.get("password")
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
 
         # Query the database for the user
         user = User.query.filter_by(username=username).first()
@@ -91,12 +91,16 @@ def register():
     error = None
 
     if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
 
         # Basic validation
         if not username or not password:
             error = "Username and password are required."
+        elif len(username) < 3:
+            error = "Username must be at least 3 characters long."
+        elif len(password) < 8:
+            error = "Password must be at least 8 characters long."
         else:
             # Check whether the username already exists
             existing_user = User.query.filter_by(username=username).first()
@@ -106,8 +110,8 @@ def register():
             else:
                 # Create a new user with a hashed password
                 new_user = User(
-                    username = username,
-                    password_hash = generate_password_hash(password)
+                    username=username,
+                    password_hash=generate_password_hash(password)
                 )
 
                 db.session.add(new_user)
