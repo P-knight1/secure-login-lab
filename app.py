@@ -1,22 +1,31 @@
-# Flask imports for routing, templates, request handling, sessions, and redirects
 from flask import Flask, render_template, request, session, redirect, url_for
+from werkzeug.security import check_password_hash
 
-# Werkzeug utilities for secure password hashing and verification
-from werkzeug.security import generate_password_hash, check_password_hash
+# Import database instance and User model
+from models import db, User
 
-# Initialize the Flask application
+
+# Initialize Flask application
 app = Flask(__name__)
 
 # Secret key used to sign session cookies
 app.secret_key = "secret-key"
 
 
-# Temporary in-memory user store (placeholder for a database)
-users = {
-    "alice": {
-        "password_hash": generate_password_hash("Password123")
-    }
-}
+# Database configuration (SQLite file stored in project directory)
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
+
+# Disable modification tracking to reduce overhead
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+
+# Initialize SQLAlchemy with the Flask app
+db.init_app(app)
+
+
+# Create database tables if they do not already exist
+with app.app_context():
+    db.create_all()
 
 
 # Home route
@@ -25,24 +34,30 @@ def home():
     return render_template("home.html")
 
 
-# Login route
+# Login route handling both page rendering and authentication
 @app.route("/login", methods=["GET", "POST"])
 def login():
+
     error = None
 
+    # Process form submission
     if request.method == "POST":
-        # Retrieve submitted form data
+
+        # Retrieve submitted credentials
         username = request.form.get("username")
         password = request.form.get("password")
 
-        # Look up user in the in-memory store
-        user = users.get(username)
+        # Query the database for the user
+        user = User.query.filter_by(username=username).first()
 
-        # Verify password against stored hash
-        if user and check_password_hash(user["password_hash"], password):
+        # Validate password against stored hash
+        if user and check_password_hash(user.password_hash, password):
+
             # Persist authenticated user in session
-            session["username"] = username
+            session["username"] = user.username
+
             return redirect(url_for("dashboard"))
+
         else:
             error = "Invalid username or password."
 
@@ -52,7 +67,8 @@ def login():
 # Protected dashboard route
 @app.route("/dashboard")
 def dashboard():
-    # Require authentication
+
+    # Ensure user is authenticated before allowing access
     if "username" not in session:
         return redirect(url_for("login"))
 
@@ -62,11 +78,13 @@ def dashboard():
 # Logout route
 @app.route("/logout")
 def logout():
-    # Remove user from session
+
+    # Remove authenticated user from session
     session.pop("username", None)
+
     return redirect(url_for("login"))
 
 
-# Run development server
+# Run Flask development server
 if __name__ == "__main__":
     app.run(debug=True)
