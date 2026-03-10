@@ -89,7 +89,6 @@ def logout():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     error = None
-    success = None
 
     if request.method == "POST":
         username = request.form.get("username")
@@ -114,9 +113,9 @@ def register():
                 db.session.add(new_user)
                 db.session.commit()
 
-                success = "Registration successful. You can now log in."
+                return redirect(url_for("login"))
 
-    return render_template("register.html", error=error, success=success)
+    return render_template("register.html", error=error)
 
 
 # Run Flask development server
